@@ -1,6 +1,7 @@
 package ru.astondevs.meetup.concurrency;
 
 import ru.astondevs.meetup.concurrency.acl3.demo.DbConnectionProvider;
+import ru.astondevs.meetup.concurrency.acl3.demo.RateLimitedApiRequester;
 import ru.astondevs.meetup.concurrency.acl3.demo.UnstableApiRequester;
 
 public class Main {
@@ -10,5 +11,8 @@ public class Main {
 
         var unstableRequester = new UnstableApiRequester();
         System.out.println(unstableRequester.collectResponses());
+
+        var limitedRequester = new RateLimitedApiRequester();
+        System.out.println(limitedRequester.collectResponses());
     }
 }
