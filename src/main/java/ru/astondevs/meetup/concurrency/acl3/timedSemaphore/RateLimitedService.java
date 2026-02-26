@@ -21,23 +21,18 @@ public class RateLimitedService implements DemoService {
     }
 
     @Override
-    public String getData(String request) {
-        try {
-            if (!rateLimiter.tryAcquire()) {
-                log.warn("limit exceeded, request {} denied", request);
-                return "not processed";
-            }
-
-            log.info("initiated processing request {}, available connections {}",
-                    request, rateLimiter.getAvailablePermits());
-            // Имитация обработки
-            Thread.sleep(50);
-
-            return "processed";
-        } catch (InterruptedException e) {
-            // можно убрать catch т.к. теперь по котракту может бросать InterruptedException
+    public String getData(String request) throws InterruptedException {
+        if (!rateLimiter.tryAcquire()) {
+            log.warn("limit exceeded, request {} denied", request);
             return "not processed";
         }
+
+        log.info("initiated processing request {}, available connections {}",
+                request, rateLimiter.getAvailablePermits());
+        // Имитация обработки
+        Thread.sleep(50);
+
+        return "processed";
     }
 
 }
