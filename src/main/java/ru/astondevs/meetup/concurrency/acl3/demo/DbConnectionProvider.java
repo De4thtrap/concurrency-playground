@@ -1,7 +1,7 @@
 package ru.astondevs.meetup.concurrency.acl3.demo;
 
 import org.apache.commons.lang3.concurrent.ConcurrentUtils;
-import ru.astondevs.meetup.concurrency.acl3.init.DbConnectionInitializer;
+import ru.astondevs.meetup.concurrency.acl3.concurrentInitializer.DbConnectionInitializer;
 
 import java.sql.Connection;
 

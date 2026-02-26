@@ -5,18 +5,20 @@ import ru.astondevs.meetup.concurrency.acl3.circuitBreaker.CircuitBreakingServic
 import java.util.ArrayList;
 import java.util.List;
 
-public class UnstableApiRequester {
+public class UnstableApiRequester implements ApiRequester {
     private final CircuitBreakingService service;
 
     public UnstableApiRequester() {
         this.service = new CircuitBreakingService();
     }
 
+    @Override
     public List<String> collectResponses() {
         List<String> responses = new ArrayList<>();
 
         for (int i = 0; i < 20; i++) {
-            responses.add(service.getData());
+            responses.add(service.getData(String.valueOf(i)));
+
         }
 
         return responses;

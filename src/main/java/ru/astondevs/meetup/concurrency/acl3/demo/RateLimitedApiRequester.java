@@ -1,23 +1,23 @@
 package ru.astondevs.meetup.concurrency.acl3.demo;
 
-import ru.astondevs.meetup.concurrency.acl3.semaphore.RateLimitedApiClient;
+import ru.astondevs.meetup.concurrency.acl3.timedSemaphore.RateLimitedService;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class RateLimitedApiRequester {
-    private final RateLimitedApiClient apiClient;
+public class RateLimitedApiRequester implements ApiRequester {
+    private final RateLimitedService service;
 
     public RateLimitedApiRequester() {
-        this.apiClient = new RateLimitedApiClient();
+        this.service = new RateLimitedService();
     }
 
-
-    public List<Boolean> collectResponses() throws InterruptedException {
-        List<Boolean> responses = new ArrayList<>();
+    @Override
+    public List<String> collectResponses() throws InterruptedException {
+        List<String> responses = new ArrayList<>();
 
         for (int i = 0; i < 20; i++) {
-            responses.add(apiClient.handleRequest(String.valueOf(i)));
+            responses.add(service.getData(String.valueOf(i)));
             Thread.sleep(400);
         }
 

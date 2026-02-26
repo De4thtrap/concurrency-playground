@@ -1,16 +1,17 @@
-package ru.astondevs.meetup.concurrency.acl3.semaphore;
+package ru.astondevs.meetup.concurrency.acl3.timedSemaphore;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.concurrent.TimedSemaphore;
+import ru.astondevs.meetup.concurrency.acl3.demo.DemoService;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
-public class RateLimitedApiClient {
+public class RateLimitedService implements DemoService {
     private final TimedSemaphore rateLimiter;
 
-    public RateLimitedApiClient() {
+    public RateLimitedService() {
         this.rateLimiter = TimedSemaphore.builder()
                 .setService(Executors.newSingleThreadScheduledExecutor())
                 .setLimit(3)
@@ -19,11 +20,12 @@ public class RateLimitedApiClient {
                 .get();
     }
 
-    public boolean handleRequest(String request) {
+    @Override
+    public String getData(String request) {
         try {
             if (!rateLimiter.tryAcquire()) {
                 log.warn("limit exceeded, request {} denied", request);
-                return false;
+                return "not processed";
             }
 
             log.info("initiated processing request {}, available connections {}",
@@ -31,9 +33,10 @@ public class RateLimitedApiClient {
             // Имитация обработки
             Thread.sleep(50);
 
-            return true;
+            return "processed";
         } catch (InterruptedException e) {
-            return false;
+            // можно убрать catch т.к. теперь по котракту может бросать InterruptedException
+            return "not processed";
         }
     }
 

@@ -1,4 +1,4 @@
-package ru.astondevs.meetup.concurrency.acl3.init;
+package ru.astondevs.meetup.concurrency.acl3.concurrentInitializer;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.concurrent.BackgroundInitializer;
