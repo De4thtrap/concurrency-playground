@@ -1,16 +1,18 @@
 package ru.astondevs.meetup.concurrency.guava.striped;
 
 import com.google.common.util.concurrent.Striped;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import ru.astondevs.meetup.concurrency.guava.demo.TransactionService;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
+import java.util.stream.Collectors;
 
 @Slf4j
-public class AccountManager {
+public class StripedTransactionService implements TransactionService {
 
     // Рекомендуется задавать размер равный степени двойки
     private final Striped<Lock> stripedLocks = Striped.lazyWeakLock(64);
@@ -18,18 +20,18 @@ public class AccountManager {
     /**
      * Имитация БД
      */
-    @Getter
-    private final ConcurrentHashMap<String, UserAccount> userAccounts = new ConcurrentHashMap<>();
+    private final Map<String, UserAccount> userAccounts = new HashMap<>();
 
     private final Random random = new Random();
 
+    @Override
     public BigDecimal processTransaction(String accountId, BigDecimal diff) {
+        log.debug("processing {}: transaction amount = {}", accountId, diff);
         Lock lock = stripedLocks.get(accountId);
         lock.lock();
 
         try {
             UserAccount account = userAccounts.computeIfAbsent(accountId, UserAccount::new);
-            log.debug("processing {}: transaction amount = {}", accountId, diff);
             var updatedBalance = account.changeBalance(diff);
 
 //            Имитация обработки
@@ -44,5 +46,11 @@ public class AccountManager {
         } finally {
             lock.unlock();
         }
+    }
+
+    @Override
+    public Map<String, BigDecimal> getAllData() {
+        return userAccounts.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getBalance()));
     }
 }
