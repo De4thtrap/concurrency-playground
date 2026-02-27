@@ -18,6 +18,7 @@ public class Main {
         System.out.println(limitedRequester.collectResponses());
 
         var transactionGenerator = new TransactionsGenerator();
-        transactionGenerator.generateTransactions();
+        transactionGenerator.generateStripedTransactions();
+        transactionGenerator.generateListenableTransactions();
     }
 }

@@ -1,40 +1,74 @@
 package ru.astondevs.meetup.concurrency.guava.demo;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import ru.astondevs.meetup.concurrency.guava.striped.AccountManager;
+import com.google.common.util.concurrent.*;
+import ru.astondevs.meetup.concurrency.guava.listenable.CallbackFactory;
+import ru.astondevs.meetup.concurrency.guava.listenable.SimpleTransactionService;
+import ru.astondevs.meetup.concurrency.guava.striped.StripedTransactionService;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.*;
 
 public class TransactionsGenerator {
 
     private final Random random = new Random();
-    private final AccountManager accountManager = new AccountManager();
+    private final TransactionService stripedTransactionService = new StripedTransactionService();
+    private final TransactionService simpleTransactionService = new SimpleTransactionService();
 
-    private final ThreadFactory factory = new ThreadFactoryBuilder()
-            .setNameFormat("stripped-pool-%d")
+    private final ThreadFactory stripedFactory = new ThreadFactoryBuilder()
+            .setNameFormat("striped-%d")
             .build();
 
-    public void generateTransactions() throws InterruptedException {
+    private final ThreadFactory listenableFactory = new ThreadFactoryBuilder()
+            .setNameFormat("listenable-%d")
+            .build();
+
+    private final ThreadFactory auditFactory = new ThreadFactoryBuilder()
+            .setNameFormat("audit-%d")
+            .build();
+
+    private final ThreadFactory monitoringFactory = new ThreadFactoryBuilder()
+            .setNameFormat("monitoring-%d")
+            .build();
+
+    public void generateStripedTransactions() throws InterruptedException {
         List<String> accounts = generateAccounts();
 
-        try (ExecutorService executorService = Executors.newCachedThreadPool(factory)) {
-            var tasks = accounts.stream().map(this::prepareTask).toList();
+        try (ExecutorService executorService = Executors.newCachedThreadPool(stripedFactory)) {
+            var tasks = accounts.stream().map(accountId -> prepareTask(accountId, stripedTransactionService)).toList();
             executorService.invokeAll(tasks);
         }
 
-        System.out.println(accountManager.getUserAccounts().values());
+        System.out.printf("Transaction report :" + stripedTransactionService.getAllData());
     }
 
-    private Callable<BigDecimal> prepareTask(String accountId) {
+    public void generateListenableTransactions() {
+        List<String> accounts = generateAccounts();
+
+        var auditExecutorService = Executors.newFixedThreadPool(3, auditFactory);
+        var monitoringExecutorService = Executors.newFixedThreadPool(3, monitoringFactory);
+
+        try (ListeningExecutorService executorService =
+                     MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(10, listenableFactory))) {
+            var tasks = accounts.stream().map(accountId -> prepareTask(accountId, simpleTransactionService)).toList();
+            for (var task : tasks) {
+                var future = executorService.submit(task);
+                Futures.addCallback(future, CallbackFactory.sendAuditEvent, auditExecutorService);
+                Futures.addCallback(future, CallbackFactory.sendMonitoringEvent, monitoringExecutorService);
+            }
+        } finally {
+            auditExecutorService.shutdown();
+            monitoringExecutorService.shutdown();
+        }
+
+        System.out.printf("Transaction report :" + simpleTransactionService.getAllData());
+    }
+
+    private Callable<BigDecimal> prepareTask(String accountId, TransactionService transactionService) {
         var diff = random.nextInt() % 10000 / 100.0;
-        return () -> accountManager.processTransaction(accountId, BigDecimal.valueOf(diff));
+        return () -> transactionService.processTransaction(accountId, BigDecimal.valueOf(diff));
     }
 
     private List<String> generateAccounts() {
