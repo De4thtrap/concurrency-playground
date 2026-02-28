@@ -44,7 +44,7 @@ public class TransactionsGenerator {
         System.out.printf("Transaction report :" + stripedTransactionService.getAllData());
     }
 
-    public void generateListenableTransactions() {
+    public void generateListenableTransactions() throws InterruptedException {
         List<String> accounts = generateAccounts();
 
         var auditExecutorService = Executors.newFixedThreadPool(3, auditFactory);
@@ -63,7 +63,10 @@ public class TransactionsGenerator {
             monitoringExecutorService.shutdown();
         }
 
-        System.out.printf("Transaction report :" + simpleTransactionService.getAllData());
+        auditExecutorService.awaitTermination(1, TimeUnit.SECONDS);
+        monitoringExecutorService.awaitTermination(1, TimeUnit.SECONDS);
+
+        System.out.printf("Transaction report: " + simpleTransactionService.getAllData());
     }
 
     private Callable<BigDecimal> prepareTask(String accountId, TransactionService transactionService) {

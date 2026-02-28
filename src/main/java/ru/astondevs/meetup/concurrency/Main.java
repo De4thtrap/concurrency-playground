@@ -9,7 +9,9 @@ import ru.astondevs.meetup.concurrency.guava.demo.TransactionsGenerator;
 public class Main {
     public static void main(String[] args) throws Exception {
         var connectionProvider = new DbConnectionProvider();
-        System.out.println(connectionProvider.getConnection().isClosed());
+        var connection = connectionProvider.getConnection();
+        System.out.println(connection.isClosed());
+        connection.close();
 
         ApiRequester unstableRequester = new UnstableApiRequester();
         System.out.println(unstableRequester.collectResponses());
