@@ -15,15 +15,7 @@ public class SimpleTransactionService implements TransactionService {
     @Override
     public BigDecimal processTransaction(String accountId, BigDecimal diff) {
         log.debug("processing {}: transaction amount = {}", accountId, diff);
-        var balance = userAccounts.putIfAbsent(accountId, diff);
-        if (balance == null) {
-            log.info("transaction on NEW account {} have been successfully processed! updated balance: {}",
-                    accountId, diff);
-            return diff;
-        }
-
-        userAccounts.replace(accountId, balance.add(diff));
-        var updatedBalance = userAccounts.get(accountId);
+        var updatedBalance = userAccounts.merge(accountId, diff, BigDecimal::add);
 
         log.info("transaction on {} have been successfully processed! updated balance: {}",
                 accountId, updatedBalance);
